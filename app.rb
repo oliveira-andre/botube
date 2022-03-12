@@ -3,6 +3,7 @@
 require 'json'
 require 'telegram/bot'
 
+require 'dotenv'
 Dotenv.load
 
 Dir['./initializers/*.rb'].sort.each { |file| require file }
