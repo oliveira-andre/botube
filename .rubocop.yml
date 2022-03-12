@@ -1,0 +1,7 @@
+# Find an integration for your editor of choice: https://github.com/bbatsov/rubocop#editor-integration
+
+AllCops:
+  TargetRubyVersion: 3.0.3
+
+  Style/Documentation:
+    Enabled: false
