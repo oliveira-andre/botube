@@ -1,0 +1,7 @@
+# start with something like:
+# en:
+#   hello_world: Hello World
+
+en:
+  welcome: "Welcome to my template telegram bot\nplease click the start button"
+  another_welcome: "DONE! congrats! i hope you to enjoy my template"
