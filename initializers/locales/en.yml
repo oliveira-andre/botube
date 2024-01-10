@@ -3,5 +3,11 @@
 #   hello_world: Hello World
 
 en:
-  welcome: "Welcome to my template telegram bot\nplease click the start button"
+  welcome: "Welcome to <b>Botube</b>\n\nHere we are to download your video and convert properly as you wish\nSend Your link"
+  processing: "⏳Processing your video..."
+  not_found: "❌Video Not Found"
+  error: "❌Error"
+  choose_format: "✅ <b>Proccessed Successfully</b>\nNow Choose the format"
+  downloading: "⏳ <b>Downloading...</b>"
+  downloaded: "✅ <b>Download is Ready!</b>"
   another_welcome: "DONE! congrats! i hope you to enjoy my template"
