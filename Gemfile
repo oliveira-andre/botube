@@ -14,6 +14,7 @@ gem 'rest-client'
 gem 'rubysouth-rack_locale'
 gem 'sinatra'
 gem 'telegram-bot-ruby'
+gem 'ytdl'
 
 group :development, :test do
   gem 'byebug'
