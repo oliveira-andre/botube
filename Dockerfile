@@ -1,6 +1,6 @@
 ### BUILD STEP ###
 
-FROM ruby:3.0-alpine AS builder
+FROM ruby:3.0.3-alpine AS builder
 
 RUN apk update && apk upgrade && apk add --update --no-cache \
   build-base \
@@ -18,7 +18,7 @@ COPY . .
 
 ### BUILD STEP DONE ###
 
-FROM ruby:3.0-alpine
+FROM ruby:3.0.3-alpine
 
 ARG SINATRA_ROOT=/usr/src/app/
 
@@ -32,6 +32,4 @@ WORKDIR $SINATRA_ROOT
 COPY --from=builder $SINATRA_ROOT $SINATRA_ROOT
 COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
 
-EXPOSE 9292
-
-CMD ["rackup", "config.ru", "-o", "0.0.0.0"]
+CMD ["ruby", "./app.rb"]

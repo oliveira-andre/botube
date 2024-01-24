@@ -34,3 +34,8 @@ class App < Sinatra::Base
     status 200
   end
 end
+
+if __FILE__ == $0
+  bot = Telegram::Bot::Api.new(TOKEN)
+  BotService.new({ inline: true })
+end

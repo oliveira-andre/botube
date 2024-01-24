@@ -10,7 +10,7 @@ services:
     environment:
       - LANG=C.UTF-8
     env_file:
-      - config/docker.env
+      - .env
     stdin_open: true
     tty: true
 
