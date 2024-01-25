@@ -118,10 +118,7 @@ class BotService < ApplicationService
   # callback queries
 
   def process_audio
-    if @finished
-      @finished = false
-      raise StandardError, 'Video already downloaded'
-    end
+    @finished = false if @finished
 
     link = @callback_query.data.split('_').last
     message_id = @callback_query.data.split('_')[1]
@@ -202,10 +199,7 @@ class BotService < ApplicationService
   end
 
   def process_video
-    if @finished
-      @finished = false
-      raise StandardError, 'Video already downloaded'
-    end
+    @finished = false if @finished
 
     link = @callback_query.data.split('_').last
     message_id = @callback_query.data.split('_')[1]
