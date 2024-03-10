@@ -35,8 +35,8 @@ WORKDIR $SINATRA_ROOT
 COPY --from=builder $SINATRA_ROOT $SINATRA_ROOT
 COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
 
-RUN python3 -m ensurepip
-RUN pip3 install --upgrade pip setuptools
-RUN pip3 install git+https://github.com/ytdl-org/youtube-dl.git@master#egg=youtube_dl
+RUN ln -s $SINATRA_ROOT/bin/yt-dlp /usr/local/bin/yt-dlp
+RUN chmod -R 7777 /usr/local/bin/yt-dlp 
+RUN echo $(yt-dlp --version)
 
 CMD ["ruby", "./app.rb"]
