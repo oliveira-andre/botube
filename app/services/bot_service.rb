@@ -11,7 +11,6 @@ require 'byebug'
 
 class BotService < ApplicationService
   def initialize(data)
-    YoutubeDL::Command.config.executable = 'youtube-dl'
     @data = data
     unless @data[:inline]
       @bot = Telegram::Bot::Api.new(TOKEN)
@@ -91,7 +90,7 @@ class BotService < ApplicationService
                      else
                        @bot.send_message(chat_id: @message.chat.id, text: message, parse_mode: 'HTML')
                      end
-    message_id = message_result['result']['message_id']
+    message_id = message_result.message_id
 
     if @message.text.include?('youtu')
       message = t('choose_format')
@@ -194,7 +193,7 @@ class BotService < ApplicationService
       )
     end
     @finished = true
-  rescue StandardError
+  rescue StandardError => e
     puts 'Audio already downloaded'
   end
 
