@@ -90,7 +90,7 @@ class BotService < ApplicationService
                      else
                        @bot.send_message(chat_id: @message.chat.id, text: message, parse_mode: 'HTML')
                      end
-    message_id = message_result.is_a?(Hash) ? message_result&.dig(:result, :message_id) : message_result&.message_id
+    message_id = message_result.is_a?(Hash) ? message_result&.dig('result', 'message_id') : message_result&.message_id
 
     if @message.text.include?('youtu')
       message = t('choose_format')
