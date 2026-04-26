@@ -1,6 +1,6 @@
 ### BUILD STEP ###
 
-FROM ruby:3.0.3-alpine AS builder
+FROM ruby:3.4.7-alpine AS builder
 
 RUN apk update && apk upgrade && apk add --update --no-cache \
   build-base \
