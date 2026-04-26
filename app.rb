@@ -11,8 +11,13 @@ Dir['./app/*/*.rb'].sort.each { |file| require file }
 Dir['./app/*/*/*.rb'].sort.each { |file| require file }
 
 class App < Sinatra::Base
+  set :host_authorization, { permitted_hosts: [] }
+
   before do
     I18n.locale = :en
+    request.body.rewind if request.body.respond_to?(:rewind)
+    @raw_body = request.body.read
+    @json = JSON.parse(@raw_body, symbolize_names: true) rescue nil if request.content_type =~ /json/
   end
 
   def t(*args)
@@ -28,9 +33,9 @@ class App < Sinatra::Base
   end
 
   post '/' do
-    request.body.rewind
-    data = JSON.parse(request.body.read)
-    BotService.new(data)
+    return nil unless @json
+
+    BotService.new(@json)
     status 200
   end
 end

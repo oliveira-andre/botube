@@ -1,3 +1,5 @@
+.byebug_history
+
 config/docker.env
 .env
 

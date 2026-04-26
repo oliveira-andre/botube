@@ -7,9 +7,12 @@ require 'rest-client'
 require 'pathname'
 require 'ytdl'
 require 'open-uri'
+require 'securerandom'
 require 'byebug'
 
 class BotService < ApplicationService
+  LINK_CACHE = {}
+
   def initialize(data)
     @data = data
     unless @data[:inline]
@@ -94,9 +97,11 @@ class BotService < ApplicationService
 
     if @message.text.include?('youtu')
       message = t('choose_format')
+      token = SecureRandom.hex(6)
+      LINK_CACHE[token] = @message.text
       kb = [[
-        Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Audio', callback_data: "audio_#{message_id}_#{@message.text}", remove_keyboard: true),
-        Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Video', callback_data: "video_#{message_id}_#{@message.text}", remove_keyboard: true)
+        Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Audio', callback_data: "audio_#{message_id}_#{token}", remove_keyboard: true),
+        Telegram::Bot::Types::InlineKeyboardButton.new(text: 'Video', callback_data: "video_#{message_id}_#{token}", remove_keyboard: true)
       ]]
       markup = Telegram::Bot::Types::InlineKeyboardMarkup.new(inline_keyboard: kb)
       if @data[:inline]
@@ -119,8 +124,9 @@ class BotService < ApplicationService
   def process_audio
     @finished = false if @finished
 
-    link = @callback_query.data.split('_').last
+    token = @callback_query.data.split('_').last
     message_id = @callback_query.data.split('_')[1]
+    link = LINK_CACHE[token]
     puts 'Downloading audio...'
 
     temp_destination = File.expand_path("./tmp")
@@ -151,7 +157,7 @@ class BotService < ApplicationService
       @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
 
       # encoded_destination = "#{state.destination.to_s.split('.').first}.opus"
-      encoded_destination = "#{state.destination.to_s.gsub('.webm', '.mp3').gusb('.m4a', '.mp3')}"
+      encoded_destination = "#{state.destination.to_s.gsub('.webm', '.mp3').gsub('.m4a', '.mp3').gsub('.mp4', '.mp3')}"
       if @data[:inline]
         @bot.api.sendAudio(
           chat_id: @message.chat.id,
@@ -180,7 +186,7 @@ class BotService < ApplicationService
     end
 
     # encoded_destination = "#{state.destination.to_s.split('.').first}.opus"
-    encoded_destination = "#{state.destination.to_s.gsub('.webm', '.mp3').gsub('.m4a', '.mp3')}"
+    encoded_destination = "#{state.destination.to_s.gsub('.mp4', '.mp3').gsub('.webm', '.mp3').gsub('.m4a', '.mp3')}"
     if @data[:inline]
       @bot.api.sendAudio(
         chat_id: @message.chat.id,
@@ -194,14 +200,16 @@ class BotService < ApplicationService
     end
     @finished = true
   rescue StandardError => e
-    puts 'Audio already downloaded'
+    puts "Audio error: #{e.class}: #{e.message}"
+    puts e.backtrace.first(5)
   end
 
   def process_video
     @finished = false if @finished
 
-    link = @callback_query.data.split('_').last
+    token = @callback_query.data.split('_').last
     message_id = @callback_query.data.split('_')[1]
+    link = LINK_CACHE[token]
     puts 'Downloading Video...'
 
     temp_destination = File.expand_path("./tmp")
