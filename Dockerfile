@@ -18,12 +18,13 @@ COPY . .
 
 ### BUILD STEP DONE ###
 
-FROM ruby:3.0.3-alpine
+FROM ruby:3.4.7-alpine
 
 ARG SINATRA_ROOT=/usr/src/app/
 
 RUN apk update && apk upgrade && apk add --update --no-cache \
   bash \
+  curl \
   tzdata \
   python3 \
   git \
@@ -35,8 +36,8 @@ WORKDIR $SINATRA_ROOT
 COPY --from=builder $SINATRA_ROOT $SINATRA_ROOT
 COPY --from=builder /usr/local/bundle/ /usr/local/bundle/
 
-RUN ln -s $SINATRA_ROOT/bin/yt-dlp /usr/local/bin/yt-dlp
-RUN chmod -R 7777 /usr/local/bin/yt-dlp 
-RUN echo $(yt-dlp --version)
+RUN curl -fsSL -o /usr/local/bin/yt-dlp https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp \
+  && chmod +x /usr/local/bin/yt-dlp \
+  && yt-dlp --version
 
 CMD ["ruby", "./app.rb"]

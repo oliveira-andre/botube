@@ -139,7 +139,13 @@ class BotService < ApplicationService
     puts 'Downloading audio...'
 
     temp_destination = File.expand_path("./tmp")
-    base_options = { output: "#{temp_destination}/%(title)s.%(ext)s", extract_audio: true, audio_format: 'mp3' }
+    base_options = {
+      output: "#{temp_destination}/%(title)s.%(ext)s",
+      extract_audio: true,
+      audio_format: 'mp3',
+      format: 'bestaudio/best',
+      extractor_args: 'youtube:player_client=web,mweb,android'
+    }
 
     attempt = lambda do |opts, final:|
       YoutubeDL.download(link, **opts)
@@ -237,7 +243,11 @@ class BotService < ApplicationService
     puts 'Downloading Video...'
 
     temp_destination = File.expand_path("./tmp")
-    base_options = { output: "#{temp_destination}/%(title)s.%(ext)s", format: 'mp4' }
+    base_options = {
+      output: "#{temp_destination}/%(title)s.%(ext)s",
+      format: 'mp4',
+      extractor_args: 'youtube:player_client=web,mweb,android'
+    }
 
     attempt = lambda do |opts, final:|
       YoutubeDL.download(link, **opts)
