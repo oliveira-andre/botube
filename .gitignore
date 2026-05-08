@@ -6,3 +6,5 @@ config/docker.env
 tmp/
 
 Makefile
+
+cookies.txt

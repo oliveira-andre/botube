@@ -121,6 +121,15 @@ class BotService < ApplicationService
 
   # callback queries
 
+  def cookies_path
+    path = File.expand_path('./cookies.txt')
+    File.exist?(path) ? path : nil
+  end
+
+  def merge_cookies(options, path)
+    path ? options.merge(cookies: path) : options
+  end
+
   def process_audio
     @finished = false if @finished
 
@@ -130,47 +139,62 @@ class BotService < ApplicationService
     puts 'Downloading audio...'
 
     temp_destination = File.expand_path("./tmp")
-    state = YoutubeDL.download(link, output: "#{temp_destination}/%(title)s.%(ext)s", extract_audio: true, audio_format: 'mp3')
-             .on_progress do |state:, line:|
-      puts "Progress: #{state.progress}%"
-      next if @last_progress == state.progress
+    base_options = { output: "#{temp_destination}/%(title)s.%(ext)s", extract_audio: true, audio_format: 'mp3' }
 
-      @last_progress = state.progress
-      message = "#{t('downloading')} #{state.progress}%"
-      if @data[:inline]
-        @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      else
+    attempt = lambda do |opts, final:|
+      YoutubeDL.download(link, **opts)
+               .on_progress do |state:, line:|
+        puts "Progress: #{state.progress}%"
+        next if @last_progress == state.progress
+
+        @last_progress = state.progress
+        message = "#{t('downloading')} #{state.progress}%"
+        if @data[:inline]
+          @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        else
+          @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        end
+      end.on_error do |state:, line:|
+        puts "Error: #{state.error}"
+        next unless final
+
+        message = t('error')
+        if @data[:inline]
+          @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        else
+          @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        end
+      end.on_complete do |state:, line:|
+        puts "Complete: #{state.destination}"
+
+        message = t('downloaded')
         @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      end
-    end.on_error do |state:, line:|
-      puts "Error: #{state.error}"
-      message = t('error')
-      if @data[:inline]
-        @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      else
-        @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      end
-    end.on_complete do |state:, line:|
-      puts "Complete: #{state.destination}"
 
-      message = t('downloaded')
-      @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        # encoded_destination = "#{state.destination.to_s.split('.').first}.opus"
+        encoded_destination = "#{state.destination.to_s.gsub('.webm', '.mp3').gsub('.m4a', '.mp3').gsub('.mp4', '.mp3')}"
+        if @data[:inline]
+          @bot.api.sendAudio(
+            chat_id: @message.chat.id,
+            audio: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
+          )
+        else
+          @bot.sendAudio(
+            chat_id: @message.chat.id,
+            audio: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
+          )
+        end
+        @finished = true
+      end.call
+    end
 
-      # encoded_destination = "#{state.destination.to_s.split('.').first}.opus"
-      encoded_destination = "#{state.destination.to_s.gsub('.webm', '.mp3').gsub('.m4a', '.mp3').gsub('.mp4', '.mp3')}"
-      if @data[:inline]
-        @bot.api.sendAudio(
-          chat_id: @message.chat.id,
-          audio: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
-        )
-      else
-        @bot.sendAudio(
-          chat_id: @message.chat.id,
-          audio: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
-        )
-      end
-      @finished = true
-    end.call
+    cookies = cookies_path
+    state = attempt.call(merge_cookies(base_options, cookies), final: cookies.nil?)
+
+    if !@finished && cookies
+      puts 'Cookies failed (likely expired), retrying without cookies...'
+      @last_progress = nil
+      state = attempt.call(base_options, final: true)
+    end
 
     puts 'Audio downloaded!'
 
@@ -213,50 +237,65 @@ class BotService < ApplicationService
     puts 'Downloading Video...'
 
     temp_destination = File.expand_path("./tmp")
-    state = YoutubeDL.download(link, output: "#{temp_destination}/%(title)s.%(ext)s", format: 'mp4')
-                     .on_progress do |state:, line:|
-      puts "Progress: #{state.progress}%"
-      next if @last_progress == state.progress
+    base_options = { output: "#{temp_destination}/%(title)s.%(ext)s", format: 'mp4' }
 
-      @last_progress = state.progress
-      message = "#{t('downloading')} #{state.progress}%"
-      if @data[:inline]
-        @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      else
-        @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      end
-    end.on_error do |state:, line:|
-      puts "Error: #{state.error}"
-      message = t('error')
-      if @data[:inline]
-        @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      else
-        @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      end
-    end.on_complete do |state:, line:|
-      puts "Complete: #{state.destination}"
+    attempt = lambda do |opts, final:|
+      YoutubeDL.download(link, **opts)
+               .on_progress do |state:, line:|
+        puts "Progress: #{state.progress}%"
+        next if @last_progress == state.progress
 
-      message = t('downloaded')
-      if @data[:inline]
-        @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      else
-        @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
-      end
+        @last_progress = state.progress
+        message = "#{t('downloading')} #{state.progress}%"
+        if @data[:inline]
+          @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        else
+          @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        end
+      end.on_error do |state:, line:|
+        puts "Error: #{state.error}"
+        next unless final
 
-      encoded_destination = state.destination.to_s
-      if @data[:inline]
-        @bot.api.sendVideo(
-          chat_id: @message.chat.id,
-          video: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
-        )
-      else
-        @bot.sendVideo(
-          chat_id: @message.chat.id,
-          video: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
-        )
-      end
-      @finished = true
-    end.call
+        message = t('error')
+        if @data[:inline]
+          @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        else
+          @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        end
+      end.on_complete do |state:, line:|
+        puts "Complete: #{state.destination}"
+
+        message = t('downloaded')
+        if @data[:inline]
+          @bot.api.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        else
+          @bot.edit_message_text(chat_id: @message.chat.id, message_id: message_id, text: message, parse_mode: 'HTML')
+        end
+
+        encoded_destination = state.destination.to_s
+        if @data[:inline]
+          @bot.api.sendVideo(
+            chat_id: @message.chat.id,
+            video: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
+          )
+        else
+          @bot.sendVideo(
+            chat_id: @message.chat.id,
+            video: Faraday::UploadIO.new(encoded_destination, 'multipart/form-data')
+          )
+        end
+        @finished = true
+      end.call
+    end
+
+    cookies = cookies_path
+    state = attempt.call(merge_cookies(base_options, cookies), final: cookies.nil?)
+
+    if !@finished && cookies
+      puts 'Cookies failed (likely expired), retrying without cookies...'
+      @last_progress = nil
+      state = attempt.call(base_options, final: true)
+    end
 
     puts 'Video downloaded!'
     return if @finished
