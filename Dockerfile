@@ -27,6 +27,7 @@ RUN apk update && apk upgrade && apk add --update --no-cache \
   curl \
   tzdata \
   python3 \
+  nodejs \
   git \
   ffmpeg \
   vim && rm -rf /var/cache/apk/* && ln -sf python3 /usr/bin/python

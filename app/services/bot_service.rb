@@ -144,7 +144,8 @@ class BotService < ApplicationService
       extract_audio: true,
       audio_format: 'mp3',
       format: 'bestaudio/best',
-      extractor_args: 'youtube:player_client=web,mweb,android'
+      extractor_args: 'youtube:player_client=web,mweb,android',
+      js_runtimes: 'node'
     }
 
     attempt = lambda do |opts, final:|
@@ -246,7 +247,8 @@ class BotService < ApplicationService
     base_options = {
       output: "#{temp_destination}/%(title)s.%(ext)s",
       format: 'mp4',
-      extractor_args: 'youtube:player_client=web,mweb,android'
+      extractor_args: 'youtube:player_client=web,mweb,android',
+      js_runtimes: 'node'
     }
 
     attempt = lambda do |opts, final:|
